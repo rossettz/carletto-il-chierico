@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bottoni Calamita</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f3;
+      font-family: system-ui, -apple-system, sans-serif;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: #1a1a18;
+      text-align: center;
+      margin: 25px;
+    }
+
+    #arena {
+      position: relative;
+      width: 720px;
+      height: 420px;
+      border: 0.5px solid rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      background: #ebebea;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .btn {
+
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid rgba(0, 0, 0, 0.25);
+      background: #ffffff;
+      color: #1a1a18;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    #btn-fermo {
+      position: relative;
+      left: 90px;
+      top: 50%;
+      transform: translateY(-50%);
+
+    }
+
+    #btn-fermo:hover {
+      background: #f0f0ee;
+    }
+
+    #btn-fermo:active {
+      transform: translateY(-50%) scale(0.97);
+    }
+
+    #btn-scappa {
+      position: absolute;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    #score-box {
+      position: absolute;
+      bottom: 14px;
+      right: 18px;
+      font-size: 13px;
+      color: #888780;
+      pointer-events: none;
+    }
+
+    #score-box span {
+      font-weight: 500;
+      color: #1a1a18;
+    }
+
+    #hint {
+      font-size: 13px;
+      color: #888780;
+    }
+
+    @media (max-width: 760px) {
+      #arena {
+        width: calc(100vw - 32px);
+        height: 380px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1c1c1a;
+      }
+
+      h1 {
+        color: #f0efea;
+      }
+
+      #arena {
+        background: #252523;
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn {
+        background: #2e2e2c;
+        color: #f0efea;
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      #btn-fermo:hover {
+        background: #383836;
+      }
+
+      #score-box {
+        color: #5f5e5a;
+      }
+
+      #score-box span {
+        color: #f0efea;
+      }
+
+      #hint {
+        color: #5f5e5a;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+
+
+  <div id="arena">
+    <h1>SONO SUPER SIMPANTICO, INCREDIBILE, FANTASTICO, BELLISSIMO, IL MIGLIORE RAGAZZO DEL MONDO?</h1>
+    <button class="btn" id="btn-fermo" onclick="fermoCliccato()">OVVIOOOOOO ❤️💕😍😘💖🥰</button>
+    <br>
+    <button class="btn" id="btn-scappa">NO.</button>
+
+  </div>
+
+
+  <script>
+    const arena = document.getElementById('arena');
+    const btnScappa = document.getElementById('btn-scappa');
+
+    let posX = 0, posY = 0;
+    let velX = 0, velY = 0;
+    let mouseX = -999, mouseY = -999;
+    let tentativi = 0;
+
+    const RAGGIO = 180;
+    const FORZA = 22;
+    const ATTRITO = 0.78;
+    const RIMBALZO = 0.6;
+    const MARGINE = 10;
+    const MARGINE_ANGOLO = 70;
+
+    function initPos() {
+      const a = arena.getBoundingClientRect();
+      posX = a.width * 0.65;
+      posY = a.height * 0.5 - (btnScappa.offsetHeight || 44) / 2;
+      velX = 0;
+      velY = 0;
+      applyPos();
+    }
+
+    function applyPos() {
+      btnScappa.style.left = posX + 'px';
+      btnScappa.style.top = posY + 'px';
+      btnScappa.style.transform = 'none';
+    }
+
+    function loop() {
+      const a = arena.getBoundingClientRect();
+      const bw = btnScappa.offsetWidth || 120;
+      const bh = btnScappa.offsetHeight || 44;
+      const W = a.width;
+      const H = a.height;
+
+      const cx = posX + bw / 2;
+      const cy = posY + bh / 2;
+      const dx = cx - mouseX;
+      const dy = cy - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+      // Repulsione dal mouse
+      if (dist < RAGGIO) {
+        const intensita = Math.pow((RAGGIO - dist) / RAGGIO, 1.5) * FORZA;
+        velX += (dx / dist) * intensita;
+        velY += (dy / dist) * intensita;
+      }
+
+      // Anti-angolo: forza che respinge dai bordi
+      if (posX < MARGINE_ANGOLO) velX += (MARGINE_ANGOLO - posX) * 0.4;
+      if (posX > W - bw - MARGINE_ANGOLO) velX -= (posX - (W - bw - MARGINE_ANGOLO)) * 0.4;
+      if (posY < MARGINE_ANGOLO) velY += (MARGINE_ANGOLO - posY) * 0.4;
+      if (posY > H - bh - MARGINE_ANGOLO) velY -= (posY - (H - bh - MARGINE_ANGOLO)) * 0.4;
+
+      // Attrito
+      velX *= ATTRITO;
+      velY *= ATTRITO;
+
+      posX += velX;
+      posY += velY;
+
+      // Rimbalzo sui muri
+      if (posX < MARGINE) {
+        posX = MARGINE;
+        velX = Math.abs(velX) * RIMBALZO;
+      }
+      if (posX > W - bw - MARGINE) {
+        posX = W - bw - MARGINE;
+        velX = -Math.abs(velX) * RIMBALZO;
+      }
+      if (posY < MARGINE) {
+        posY = MARGINE;
+        velY = Math.abs(velY) * RIMBALZO;
+      }
+      if (posY > H - bh - MARGINE) {
+        posY = H - bh - MARGINE;
+        velY = -Math.abs(velY) * RIMBALZO;
+      }
+
+      applyPos();
+      requestAnimationFrame(loop);
+    }
+
+    arena.addEventListener('mousemove', (e) => {
+      const a = arena.getBoundingClientRect();
+      const nx = e.clientX - a.left;
+      const ny = e.clientY - a.top;
+
+      const bw = btnScappa.offsetWidth || 120;
+      const bh = btnScappa.offsetHeight || 44;
+      const cx = posX + bw / 2;
+      const cy = posY + bh / 2;
+      const d = Math.sqrt((cx - nx) ** 2 + (cy - ny) ** 2);
+      if (d < 50) {
+        tentativi++;
+        document.getElementById('tentativi').textContent = tentativi;
+      }
+
+      mouseX = nx;
+      mouseY = ny;
+    });
+
+    arena.addEventListener('mouseleave', () => {
+      mouseX = -999;
+      mouseY = -999;
+    });
+
+    function fermoCliccato() {
+      window.location.href = "muah.html";
+    }
+
+    window.addEventListener('load', () => { initPos(); loop(); });
+    window.addEventListener('resize', initPos);
+  </script>
+</body>
+
+</html>
